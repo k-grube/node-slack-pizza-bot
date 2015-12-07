@@ -26,7 +26,7 @@ router.get('/api/track/id/:id/store/:store', function (req, res, next) {
 });
 
 router.post('/api/slack', function (req, res, next) {
-    console.log('api slack route', req.params.phone);
+    console.log('api slack route', req.body);
 
     var body = req.body;
     var command = req.body.text;

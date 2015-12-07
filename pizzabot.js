@@ -24,7 +24,7 @@ var pizzabot = {
      * @param body.command
      * @param body.text
      * @param body.response_url
-     * @returns {Deferred<string>}
+     * @returns {Deferred<T>}
      */
     route: function (body) {
         var deferred = Q.defer();
@@ -33,22 +33,44 @@ var pizzabot = {
 
         if (args.length > 2) {
             this.usage(body);
+            deferred.reject({err: 'invalid syntax'});
         } else {
-            var command = args[1];
+            var command = args[0];
 
-            this[command](args[2]);
+            deferred.resolve(this[command](body, args[1]));
         }
 
         return deferred;
     },
 
-    track: function (body) {
-        pizzapi.Track.byPhone()
+    track: function (body, phone) {
 
+        pizzapi.Track.byPhone(phone,
+            /**
+             *
+             * @param {{}} result
+             * @param {{}} result.orders
+             * @param {[{}]} result.orders.OrderStatus
+             * @param {string} result.orders.OrderStatus[].DriverName
+             * @param {string} result.orders.OrderStatus[].OvenTime
+             * @param {string} result.orders.OrderStatus[].StartTime
+             * @param {string} result.orders.OrderStatus[].RackTime
+             * @param {string} result.orders.OrderStatus[].OvenTime
+             * @param {string} result.orders.OrderStatus[].OrderStatus
+             * @param {{}} result.query
+             * @param {string} result.query.Phone
+             */
+            function (result) {
+                var message = {
+                    text: "Pizza status: " + result.orders.OrderStatus[0].OrderStatus,
+                    response_type: "in_channel"
+                };
+                this.send(body, message);
+            });
     },
 
     find: function (body) {
-        pizzapi.Track.byId()
+        pizzapi.Store.findNearbyStores();
     },
 
     queue: function () {
