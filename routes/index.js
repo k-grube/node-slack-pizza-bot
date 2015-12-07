@@ -31,9 +31,7 @@ router.post('/api/slack', function (req, res, next) {
     var body = req.body;
     var command = req.body.text;
 
-    pizzabot.route(req.body)
-        .then(res.json({msg: 'OK'}))
-        .fail(res.json({msg: 'FAIL'}));
+    pizzabot.route(req.body);
 
 });
 

@@ -31,13 +31,13 @@ var pizzabot = {
 
         var args = body.text.split(' ');
 
-        if (args.length > 2) {
+        if (args.length < 2) {
             this.usage(body);
             deferred.reject({err: 'invalid syntax'});
         } else {
             var command = args[0];
 
-            deferred.resolve(this[command](body, args[1]));
+            deferred.resolve(pizzabot[command](body, args[1]));
         }
 
         return deferred;
@@ -65,7 +65,7 @@ var pizzabot = {
                     text: "Pizza status: " + result.orders.OrderStatus[0].OrderStatus,
                     response_type: "in_channel"
                 };
-                this.send(body, message);
+                pizzabot.send(body, message);
             });
     },
 
@@ -83,7 +83,7 @@ var pizzabot = {
             response_type: "ephemeral"
         };
 
-        this.send(body, message);
+        pizzabot.send(body, message);
     },
 
     send: function (body, message) {
