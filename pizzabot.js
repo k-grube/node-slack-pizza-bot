@@ -119,7 +119,8 @@ var pizzabot = {
                         var message = "```Best Match:"
                             + "\r\nStoreID: " + results.result.Stores[0].StoreID
                             + "\r\nAddress: " + results.result.Stores[0].AddressDescription
-                            + "\r\nOpen for delivery? " + results.result.Stores[0].ServiceIsOpen.Delivery;
+                            + "\r\nOpen for delivery? " + results.result.Stores[0].ServiceIsOpen.Delivery
+                            + "```";
 
 
                         callback({
