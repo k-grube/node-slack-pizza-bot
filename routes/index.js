@@ -28,10 +28,13 @@ router.get('/api/track/id/:id/store/:store', function (req, res, next) {
 router.post('/api/slack', function (req, res, next) {
     console.log('api slack route', req.body);
 
-    var body = req.body;
-    var command = req.body.text;
-
-    pizzabot.route(req.body);
+    pizzabot.route(req.body)
+        .then(function (result) {
+            res.json(result);
+        })
+        .fail(function (result) {
+            res.json(result);
+        });
 
 });
 
