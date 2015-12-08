@@ -79,7 +79,11 @@ var pizzabot = {
 
     usage: function (body) {
         var message = {
-            text: "pizzabot usage:\r\n```/pizzabot <command> <args>\r\n Commands:\r\n\ttrack <phone | id>```",
+            text: "```/pizzabot [command: track, find, order] [arg]\r\n" +
+            "track [phone number] - in the format of 1234567890[+000]\r\n" +
+            "where 123 is area code, 4567890 is the phone number and 000 is the extension\r\n" +
+            "find [zip] - in the format of 12345\r\n" +
+            "Locates the nearest store to the zip specified```",
             response_type: "ephemeral"
         };
 
