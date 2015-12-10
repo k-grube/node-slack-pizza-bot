@@ -85,12 +85,13 @@ var pizzabot = {
                             pizzaStatus += "Order #" + (i + 1) + " - status: " + orderStatus + "\r\n";
                             pizzaStatus += "Order #" + (i + 1) + " - description: " + orderStatus + "\r\n";
 
+                            /*
                             if (!pizzabot.queue.contains(phone) && orderStatus !== 'Completed') {
-                                pizzabot.queue.add(phone, body, orderStatus);
+                                pizzabot.queue.add(phone, body, orderStatus, i);
                             }
                             if (pizzabot.queue.contains(phone) && orderStatus === 'Completed') {
                                 pizzabot.queue.remove(phone);
-                            }
+                            }*/
                         }
 
                         callback({
@@ -181,12 +182,17 @@ var pizzabot = {
              * @param phone
              * @param body
              * @param lastStatus
+             * @param sequenceNumber
              */
-            add: function (phone, body, lastStatus) {
-                self.queue[phone] = {
+            add: function (phone, body, lastStatus, sequenceNumber) {
+                if (typeof self.queue[phone] === 'undefined') {
+                    self.queue[phone] = [];
+                }
+                self.queue[phone][sequenceNumber] = {
                     body: body,
                     phone: phone,
-                    lastStatus: lastStatus
+                    lastStatus: lastStatus,
+                    sequenceNumber: sequenceNumber
                 };
                 console.log('add queue', phone);
                 self.stop();
@@ -195,10 +201,16 @@ var pizzabot = {
             /**
              * Is the order being tracked?
              * @param phone
+             * @param sequenceNumber
              * @returns {boolean}
              */
-            contains: function (phone) {
-                return typeof self.queue[phone] !== 'undefined';
+            contains: function (phone, sequenceNumber) {
+                if (typeof sequenceNumber === 'undefined') {
+                    sequenceNumber = 0;
+                }
+
+                return typeof self.queue[phone] !== 'undefined' && self.queue[phone].sequenceNumber == sequenceNumber;
+
             },
             /**
              * start intervals to periodically check the API for updates
@@ -208,14 +220,23 @@ var pizzabot = {
                 for (var q in self.queue) {
                     if (self.queue.hasOwnProperty(q)) {
                         self.queue[q].interval = setInterval(function (t) {
+                            
+                            pizzabot.track(t.body, t.phone, function(){
+
+                            });
+                            
                             pizzapi.Track.byPhone(t.phone, function (result) {
-                                if(result.success) {
+                                if (result.success) {
                                     if (result.orders.OrderStatus.length > 0) {
-
+                                        for (var i = 0; i < result.orders.OrderStatus.length; i++) {
+                                            
+                                        }
                                     } else {
+                                        if (self.queue.contains(t.phone)) {
 
+                                        }
                                     }
-                                }else{
+                                } else {
 
                                 }
                             });
