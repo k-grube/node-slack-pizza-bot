@@ -4,7 +4,8 @@
 var Slack = require('slack-node'),
     request = require('request'),
     Q = require('q'),
-    pizzapi = require('dominos');
+    pizzapi = require('dominos'),
+    _ = require('lodash');
 
 var DEFAULT_UPDATE_TIMER = 60000;
 
@@ -12,6 +13,10 @@ var SLACK_BOT_TOKEN = process.env.SLACK_BOT_TOKEN,
     SLACK_SLASH_TOKEN = process.env.SLACK_SLASH_TOKEN,
     SLACK_REPLY_CHANNEL = process.env.SLACK_REPLY_CHANNEL,
     slack = new Slack(SLACK_BOT_TOKEN);
+
+setInterval(function(){
+    console.log(pizzabot.queue.contents());
+}, 10000);
 
 /**
  *
@@ -78,8 +83,11 @@ var pizzabot = {
              */
             function (result) {
                 console.log(result);
-                if (result.success) {
+                if (typeof result.orders.OrderStatus !== 'undefined') {
                     //order returned
+                    if (!_.isArray(result.orders.OrderStatus)) {
+                        result.orders.OrderStatus = [result.orders.OrderStatus];
+                    }
                     if (result.orders.OrderStatus.length > 0) {
                         var pizzaStatus = "";
                         for (var i = 0; i < result.orders.OrderStatus.length; i++) {
@@ -108,7 +116,7 @@ var pizzabot = {
                     }
                 } else {
                     callback({
-                        text: "No orders found.",
+                        text: "No results returned.",
                         response_type: "in_channel"
                     });
                 }
@@ -198,8 +206,8 @@ var pizzabot = {
                 }
 
                 console.log('add queue', phone);
-                self.stop();
-                self.start();
+                pizzabot.queue.stop();
+                pizzabot.queue.start();
             },
             /**
              * Is the order being tracked?
@@ -254,9 +262,12 @@ var pizzabot = {
              */
             remove: function (phone) {
                 delete self.queue[phone];
-                self.stop();
-                self.start();
+                pizzabot.queue.stop();
+                pizzabot.queue.start();
                 console.log('remove queue', phone);
+            },
+            contents: function(){
+                return self.queue;
             }
         }
     })(),
