@@ -219,13 +219,18 @@ var pizzabot = {
                     if (self.queue.hasOwnProperty(q)) {
                         self.queue[q].interval = setInterval(function (t) {
                             pizzapi.Track.byPhone(t.phone, function (result) {
-                                if (result == self.queue[result.query.Phone].rawStatus) {
-                                    console.log('queue interval no changes detected');
-                                } else {
-                                    console.log('queue interval changes detected');
-                                    pizzabot.track(t.phone, t.body, function (message) {
-                                        pizzabot.sendAPI(t.body, message);
-                                    });
+                                try {
+                                    //stupid comparison for equivalence, objects are small so it's quick
+                                    if (JSON.parse(result) == JSON.parse(self.queue[result.query.Phone].rawStatus)) {
+                                        console.log('queue interval no changes detected');
+                                    } else {
+                                        console.log('queue interval changes detected');
+                                        pizzabot.track(t.phone, t.body, function (message) {
+                                            pizzabot.sendAPI(t.body, message);
+                                        });
+                                    }
+                                } catch (e) {
+                                    console.log('error comparing results');
                                 }
                             });
                         }, DEFAULT_UPDATE_TIMER, self.queue[q]);
