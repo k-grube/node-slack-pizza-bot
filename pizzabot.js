@@ -8,12 +8,14 @@ var Slack = require('slack-node'),
 
 var DEFAULT_UPDATE_TIMER = 60000;
 
-var apiToken = process.env.SLACK_TOKEN,
-    slack = new Slack(apiToken);
+var SLACK_BOT_TOKEN = process.env.SLACK_BOT_TOKEN,
+    SLACK_SLASH_TOKEN = process.env.SLACK_SLASH_TOKEN,
+    SLACK_REPLY_CHANNEL = process.env.SLACK_REPLY_CHANNEL,
+    slack = new Slack(SLACK_BOT_TOKEN);
 
 /**
  *
- * @type {{route: Function, track: Function, find: Function, queue: {add: pizzabot.queue.add, contains: pizzabot.queue.contains, start: pizzabot.queue.start, stop: pizzabot.queue.stop, remove: pizzabot.queue.remove}, usage: Function, send: Function}}
+ * @type {{route: Function, track: Function, find: Function, queue: {add: pizzabot.queue.add, contains: pizzabot.queue.contains, start: pizzabot.queue.start, stop: pizzabot.queue.stop, remove: pizzabot.queue.remove}, usage: Function, send: Function, sendAPI: Function}}
  */
 var pizzabot = {
 
@@ -85,13 +87,13 @@ var pizzabot = {
                             pizzaStatus += "Order #" + (i + 1) + " - status: " + orderStatus + "\r\n";
                             pizzaStatus += "Order #" + (i + 1) + " - description: " + orderStatus + "\r\n";
 
-                            /*
+
                             if (!pizzabot.queue.contains(phone) && orderStatus !== 'Completed') {
-                                pizzabot.queue.add(phone, body, orderStatus, i);
+                                pizzabot.queue.add(phone, body, result);
                             }
                             if (pizzabot.queue.contains(phone) && orderStatus === 'Completed') {
                                 pizzabot.queue.remove(phone);
-                            }*/
+                            }
                         }
 
                         callback({
@@ -142,7 +144,6 @@ var pizzabot = {
                             + "\r\nOpen for delivery? " + results.result.Stores[0].ServiceIsOpen.Delivery
                             + "```";
 
-
                         callback({
                             text: message,
                             response_type: 'in_channel'
@@ -174,6 +175,10 @@ var pizzabot = {
      */
         function () {
         var self = this;
+        /**
+         *
+         * @type {{body, phone, lastStatus, rawStatus}}
+         */
         self.queue = {};
 
         return {
@@ -181,19 +186,17 @@ var pizzabot = {
              * Add the order to the queue
              * @param phone
              * @param body
-             * @param lastStatus
-             * @param sequenceNumber
+             * @param rawStatus
              */
-            add: function (phone, body, lastStatus, sequenceNumber) {
+            add: function (phone, body, rawStatus) {
                 if (typeof self.queue[phone] === 'undefined') {
-                    self.queue[phone] = [];
+                    self.queue[phone] = {
+                        body: body,
+                        phone: phone,
+                        rawStatus: rawStatus
+                    };
                 }
-                self.queue[phone][sequenceNumber] = {
-                    body: body,
-                    phone: phone,
-                    lastStatus: lastStatus,
-                    sequenceNumber: sequenceNumber
-                };
+
                 console.log('add queue', phone);
                 self.stop();
                 self.start();
@@ -201,15 +204,10 @@ var pizzabot = {
             /**
              * Is the order being tracked?
              * @param phone
-             * @param sequenceNumber
              * @returns {boolean}
              */
-            contains: function (phone, sequenceNumber) {
-                if (typeof sequenceNumber === 'undefined') {
-                    sequenceNumber = 0;
-                }
-
-                return typeof self.queue[phone] !== 'undefined' && self.queue[phone].sequenceNumber == sequenceNumber;
+            contains: function (phone) {
+                return typeof self.queue[phone] !== 'undefined';
 
             },
             /**
@@ -220,24 +218,14 @@ var pizzabot = {
                 for (var q in self.queue) {
                     if (self.queue.hasOwnProperty(q)) {
                         self.queue[q].interval = setInterval(function (t) {
-                            
-                            pizzabot.track(t.body, t.phone, function(){
-
-                            });
-                            
                             pizzapi.Track.byPhone(t.phone, function (result) {
-                                if (result.success) {
-                                    if (result.orders.OrderStatus.length > 0) {
-                                        for (var i = 0; i < result.orders.OrderStatus.length; i++) {
-                                            
-                                        }
-                                    } else {
-                                        if (self.queue.contains(t.phone)) {
-
-                                        }
-                                    }
+                                if (result == self.queue[result.query.Phone].rawStatus) {
+                                    console.log('queue interval no changes detected');
                                 } else {
-
+                                    console.log('queue interval changes detected');
+                                    pizzabot.track(t.phone, t.body, function (message) {
+                                        pizzabot.sendAPI(t.body, message);
+                                    });
                                 }
                             });
                         }, DEFAULT_UPDATE_TIMER, self.queue[q]);
@@ -302,11 +290,10 @@ var pizzabot = {
      * @param message
      */
     sendAPI: function (body, message) {
-
+        message.channel = SLACK_REPLY_CHANNEL;
         slack.api('chat.postMessage', message, function (err, response) {
             console.log('pizzabot sendAPI', 'err', err, 'response', response);
         });
-
     }
 };
 
