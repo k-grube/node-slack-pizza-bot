@@ -1,5 +1,5 @@
 # node-slack-pizza-bot
-Node.js express based bot for Slack
+Node.js Express based bot for Slack
 
 Meant to be published to Heroku, or similar service.
 
