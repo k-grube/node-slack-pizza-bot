@@ -93,8 +93,10 @@ var pizzabot = {
                         for (var i = 0; i < result.orders.OrderStatus.length; i++) {
                             var orderStatus = result.orders.OrderStatus[i].OrderStatus,
                                 orderDescription = result.orders.OrderStatus[i].OrderDescription;
-                            pizzaStatus += "Order #" + (i + 1) + " - status: " + orderStatus + "\r\n";
-                            pizzaStatus += "Order #" + (i + 1) + " - description: " + orderDescription + "\r\n";
+                            if(orderStatus !== 'Abandoned') {
+                                pizzaStatus += "Order #" + (i + 1) + " - status: " + orderStatus + "\r\n";
+                                pizzaStatus += "Order #" + (i + 1) + " - description: " + orderDescription + "\r\n";
+                            }
 
 
                             if (!pizzabot.queue.contains(phone) && orderStatus !== 'Completed') {
