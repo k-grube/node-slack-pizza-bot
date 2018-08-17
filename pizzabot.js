@@ -7,16 +7,12 @@ var Slack = require('slack-node'),
     pizzapi = require('dominos'),
     _ = require('lodash');
 
-var DEFAULT_UPDATE_TIMER = 60000;
+var DEFAULT_UPDATE_TIMER = 10000;
 
 var SLACK_BOT_TOKEN = process.env.SLACK_BOT_TOKEN,
     SLACK_SLASH_TOKEN = process.env.SLACK_SLASH_TOKEN,
     SLACK_REPLY_CHANNEL = process.env.SLACK_REPLY_CHANNEL,
     slack = new Slack(SLACK_BOT_TOKEN);
-
-setInterval(function(){
-    console.log(pizzabot.queue.contents());
-}, 10000);
 
 /**
  *
@@ -63,6 +59,7 @@ var pizzabot = {
     },
 
     track: function (body, phone, callback) {
+        console.log('Tracking', phone);
 
         return pizzapi.Track.byPhone(phone,
             /**
@@ -83,7 +80,7 @@ var pizzabot = {
              */
             function (result) {
                 console.log(result);
-                if (typeof result.orders.OrderStatus !== 'undefined') {
+                if (result.orders && typeof result.orders.OrderStatus !== 'undefined') {
                     //order returned
                     if (!_.isArray(result.orders.OrderStatus)) {
                         result.orders.OrderStatus = [result.orders.OrderStatus];
@@ -231,17 +228,17 @@ var pizzabot = {
                         self.queue[q].interval = setInterval(function (t) {
                             pizzapi.Track.byPhone(t.phone, function (result) {
                                 try {
-                                    //stupid comparison for equivalence, objects are small so it's quick
-                                    if (JSON.parse(result) == JSON.parse(self.queue[result.query.Phone].rawStatus)) {
+                                    //@TODO replace with loop for orders blargh
+                                    if (JSON.stringify(result.orders.OrderStatus) == JSON.stringify(t.rawStatus.orders.OrderStatus)) {
                                         console.log('queue interval no changes detected');
                                     } else {
                                         console.log('queue interval changes detected');
-                                        pizzabot.track(t.phone, t.body, function (message) {
+                                        pizzabot.track(t.body, t.phone, function (message) {
                                             pizzabot.sendAPI(t.body, message);
                                         });
                                     }
                                 } catch (e) {
-                                    console.log('error comparing results');
+                                    console.log('error comparing results', e);
                                 }
                             });
                         }, DEFAULT_UPDATE_TIMER, self.queue[q]);
@@ -269,7 +266,7 @@ var pizzabot = {
                 pizzabot.queue.start();
                 console.log('remove queue', phone);
             },
-            contents: function(){
+            contents: function () {
                 return self.queue;
             }
         }

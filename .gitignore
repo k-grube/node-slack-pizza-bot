@@ -19,3 +19,4 @@ build/Release
 node_modules
 
 .idea/
+scratch
